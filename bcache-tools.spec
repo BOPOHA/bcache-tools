@@ -1,15 +1,9 @@
 #global gitdate 20131018
 
-%if 0%{?fedora} >= 23
-%global need_python3 1
-%else
-%global need_python3 0
-%endif
-
 Summary: Tools for Linux kernel block layer cache
 Name: bcache-tools
 Version: 1.0.8
-Release: 5%{?dist}
+Release: 1%{?dist}
 License: GPLv2
 Group: System Environment/Base
 URL: http://bcache.evilpiepirate.org/
@@ -18,38 +12,8 @@ VCS: https://github.com/g2p/bcache-tools.git
 # cd bcache-tools/
 # git archive --format=tar --prefix=bcache-tools-1.0.8/ v1.0.8 | gzip > ../bcache-tools-1.0.8.tar.gz
 Source0: %{name}-%{version}.tar.gz
-# This part is a prerelease version obtained by https://gist.github.com/djwong/6343451:
-# git clone https://gist.github.com/6343451.git
-# cd 6343451/
-# git archive --format=tar --prefix=bcache-status-20140220/ 6d278f9886ab5f64bd896080b1b543ba7ef6c7a6 | gzip > ../bcache-status-20140220.tar.gz
-# see also http://article.gmane.org/gmane.linux.kernel.bcache.devel/1951
-Source1: bcache-status-20140220.tar.gz
-# bcache status not provided as a true package, so this is a self maintained
-# man page for it
-# http://article.gmane.org/gmane.linux.kernel.bcache.devel/1946
-Patch0: %{name}-status-20130826-man.patch
-# configure is not "Fedora compliant", do a small step in the
-# right direction
-Patch2: %{name}-20131018-fedconf.patch
-# util-linux takes care of bcache superblock identification so we remove
-# the probe-cache call (which is Fedora specific):
-Patch3: %{name}-1.0.8-noprobe.patch
-# the following fix is pending upstream
-# gcc 5.1.1 apparently is more picky than Fedora 21 gcc
-Patch4: bcache-tools-1.0.8-crc64.patch
-# Fedora 23 uses python3 by default
-Patch5: bcache-status-python3.patch
 
-%if %{need_python3}
-Requires: python3
-%else
 Requires: python
-%endif
-# This is a kind of soft dependency: because we don't include probe-bcache
-# we have to make sure that libblkid is able to identify bcache. So this
-# is why it requires recent libblkid.
-Requires: libblkid >= 2.24
-Conflicts: dracut < 034
 BuildRequires: libuuid-devel libblkid-devel systemd
 
 %description
@@ -62,20 +26,9 @@ This package contains the utilities for manipulating bcache.
 %global dracutlibdir %{_prefix}/lib/dracut
 
 %prep
-%setup -q -n bcache-tools-%{version}
-tar xzf %{SOURCE1} --strip-components=1
-%patch0 -p1 -b .man
-%patch2 -p1 -b .fedconfmake
-chmod +x configure
-%patch3 -p1 -b .noprobe
-%patch4 -p1 -b .crc64
-
-%if %{need_python3}
-%patch5 -p1 -b .python3
-%endif
+%setup -q
 
 %build
-%configure
 make %{?_smp_mflags}
 
 %install
@@ -112,17 +65,6 @@ install -p  -m 755 bcache-status %{buildroot}%{_sbindir}/bcache-status
 %{dracutlibdir}/modules.d/90bcache
 
 %changelog
-* Wed Feb 03 2016 Fedora Release Engineering <releng@fedoraproject.org> - 1.0.8-5
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_24_Mass_Rebuild
-
-* Sat Jun 20 2015 Rolf Fokkens <rolf@rolffokkens.nl> - 1.0.8-4
-- bcache-status now explicitly uses python3 not python on Fedora 23 and up
-
-* Wed Jun 17 2015 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.0.8-3
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_23_Mass_Rebuild
-
-* Fri May 22 2015 Rolf Fokkens <rolf@rolffokkens.nl> - 1.0.8-2
-- (#1224384) Now compiles on Fedora 22 / gcc 5.1.1
 
 * Fri Dec 05 2014 Rolf Fokkens <rolf@rolffokkens.nl> - 1.0.8-1
 - Sourced now from https://github.com/g2p/bcache-tools.git
